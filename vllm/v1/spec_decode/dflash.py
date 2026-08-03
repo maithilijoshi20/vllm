@@ -282,6 +282,17 @@ class DFlashProposer(SpecDecodeBaseProposer):
             self._context_positions_buffer[:num_context],
             self._context_slot_mapping_buffer[:num_context],
         )
+
+        # A piecewise CUDA graph can pad the query forward beyond the live
+        # DFlash query rows. The input-preparation kernel writes only those
+        # live rows; leaving the remainder from a prior, larger batch makes
+        # graph replays depend on stale tokens and positions. The associated
+        # slot mappings are padded by _get_slot_mapping(), so make these rows
+        # inert as well.
+        if num_input_tokens > num_tokens:
+            self.input_ids[num_tokens:num_input_tokens].zero_()
+            self.positions[num_tokens:num_input_tokens].zero_()
+
         return (
             dict(
                 input_ids=self.input_ids[:num_input_tokens],
