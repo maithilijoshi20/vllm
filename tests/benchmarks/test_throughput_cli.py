@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import subprocess
+from unittest.mock import Mock
 
 import pytest
 
@@ -8,6 +9,7 @@ from vllm.benchmarks.datasets import SampleRequest
 from vllm.benchmarks.throughput import (
     _run_vllm_chat_requests,
     add_cli_args,
+    get_requests,
     validate_args,
 )
 from vllm.utils.argparse_utils import FlexibleArgumentParser
@@ -79,6 +81,42 @@ def test_bench_throughput_accepts_mmvu_dataset():
     )
 
     validate_args(args)
+
+
+def test_bench_throughput_loads_mmvu_dataset(monkeypatch: pytest.MonkeyPatch):
+    parser = FlexibleArgumentParser()
+    add_cli_args(parser)
+    args = parser.parse_args(
+        [
+            "--model",
+            MODEL_NAME,
+            "--backend",
+            "vllm-chat",
+            "--dataset-name",
+            "hf",
+            "--dataset-path",
+            "yale-nlp/MMVU",
+        ]
+    )
+    captured = {}
+
+    class FakeMMVUDataset:
+        SUPPORTED_DATASET_PATHS = {"yale-nlp/MMVU": None}
+
+        def __init__(self, **kwargs):
+            captured["init"] = kwargs
+
+        def sample(self, **kwargs):
+            captured["sample"] = kwargs
+            return []
+
+    monkeypatch.setattr(
+        "vllm.benchmarks.throughput.MMVUDataset", FakeMMVUDataset
+    )
+
+    assert get_requests(args, Mock()) == []
+    assert captured["init"]["dataset_split"] == "validation"
+    assert captured["sample"]["enable_multimodal_chat"]
 
 
 def test_vllm_chat_requests_include_multimodal_content():

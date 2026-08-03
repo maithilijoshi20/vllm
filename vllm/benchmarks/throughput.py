@@ -614,6 +614,14 @@ def get_requests(args, tokenizer):
             common_kwargs["dataset_split"] = "train"
             sample_kwargs["enable_multimodal_chat"] = True
         elif (
+            args.dataset_path in MMVUDataset.SUPPORTED_DATASET_PATHS
+            or args.hf_name in MMVUDataset.SUPPORTED_DATASET_PATHS
+        ):
+            dataset_cls = MMVUDataset
+            common_kwargs["dataset_subset"] = None
+            common_kwargs["dataset_split"] = "validation"
+            sample_kwargs["enable_multimodal_chat"] = True
+        elif (
             args.dataset_path in InstructCoderDataset.SUPPORTED_DATASET_PATHS
             or args.hf_name in InstructCoderDataset.SUPPORTED_DATASET_PATHS
         ):
