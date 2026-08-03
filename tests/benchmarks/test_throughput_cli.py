@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from vllm.benchmarks.datasets import SampleRequest
+from vllm.benchmarks.datasets import MMVUDataset, SampleRequest
 from vllm.benchmarks.throughput import (
     _run_vllm_chat_requests,
     add_cli_args,
@@ -117,6 +117,31 @@ def test_bench_throughput_loads_mmvu_dataset(monkeypatch: pytest.MonkeyPatch):
     assert get_requests(args, Mock()) == []
     assert captured["init"]["dataset_split"] == "validation"
     assert captured["sample"]["enable_multimodal_chat"]
+
+
+def test_mmvu_dataset_embeds_local_video_bytes(tmp_path):
+    video_path = tmp_path / "video.mp4"
+    video_path.write_bytes(b"video-bytes")
+    dataset = MMVUDataset.__new__(MMVUDataset)
+    dataset._remote_path_root = "https://huggingface.co/datasets/yale-nlp/MMVU/resolve/main"
+    dataset._local_path_root = str(tmp_path)
+    dataset.hf_name = "yale-nlp/MMVU"
+    dataset.data = [
+        {
+            "question": "What happens?",
+            "choices": {"A": "Something", "B": "Nothing"},
+            "video": f"{dataset._remote_path_root}/video.mp4",
+        }
+    ]
+    tokenizer = Mock()
+    tokenizer.encode.return_value = []
+
+    request = dataset.sample(tokenizer, num_requests=1)[0]
+
+    assert request.multi_modal_data == {
+        "type": "video_url",
+        "video_url": {"url": "data:video/mp4;base64,dmlkZW8tYnl0ZXM="},
+    }
 
 
 def test_vllm_chat_requests_include_multimodal_content():
