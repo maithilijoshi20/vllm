@@ -23,6 +23,7 @@ from vllm.benchmarks.datasets import (
     ConversationDataset,
     CustomAudioDataset,
     InstructCoderDataset,
+    MMVUDataset,
     MultiModalConversationDataset,
     PrefixRepetitionRandomDataset,
     RandomDataset,
@@ -788,10 +789,12 @@ def validate_args(args):
     elif args.dataset_name == "hf":
         if args.dataset_path in (
             VisionArenaDataset.SUPPORTED_DATASET_PATHS.keys()
+            | MMVUDataset.SUPPORTED_DATASET_PATHS.keys()
             | MultiModalConversationDataset.SUPPORTED_DATASET_PATHS
             | ConversationDataset.SUPPORTED_DATASET_PATHS
         ) or args.hf_name in (
             VisionArenaDataset.SUPPORTED_DATASET_PATHS.keys()
+            | MMVUDataset.SUPPORTED_DATASET_PATHS.keys()
             | MultiModalConversationDataset.SUPPORTED_DATASET_PATHS
             | ConversationDataset.SUPPORTED_DATASET_PATHS
         ):
