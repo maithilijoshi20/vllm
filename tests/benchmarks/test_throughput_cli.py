@@ -8,6 +8,7 @@ from vllm.benchmarks.datasets import SampleRequest
 from vllm.benchmarks.throughput import (
     _run_vllm_chat_requests,
     add_cli_args,
+    validate_args,
 )
 from vllm.utils.argparse_utils import FlexibleArgumentParser
 
@@ -58,6 +59,26 @@ def test_bench_throughput_accepts_custom_audio_args():
     assert args.no_oversample
     assert args.custom_output_len == 32
     assert args.enable_multimodal_chat
+
+
+def test_bench_throughput_accepts_mmvu_dataset():
+    parser = FlexibleArgumentParser()
+    add_cli_args(parser)
+
+    args = parser.parse_args(
+        [
+            "--model",
+            MODEL_NAME,
+            "--backend",
+            "vllm-chat",
+            "--dataset-name",
+            "hf",
+            "--dataset-path",
+            "yale-nlp/MMVU",
+        ]
+    )
+
+    validate_args(args)
 
 
 def test_vllm_chat_requests_include_multimodal_content():
